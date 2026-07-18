@@ -1,24 +1,22 @@
-from  __main__ import app
-import settings
-from flask import json, request
+from flask import jsonify, Blueprint, request
+
+bp = Blueprint('api', __name__)
 
 
-@app.route('/api/sensors/<device_id>/readings', methods=['POST'])
-def get_configuration(device_id):
-    response = app.response_class(mimetype='application/json')
-    response.headers['Access-Control-Allow-Origin'] = '*'
-
+@bp.route('/api/sensors/<device_id>/readings', methods=['POST'])
+def publish_reading(device_id):
     value = request.form.get('value', default=None, type=str)
     timestamp = request.form.get('timestamp', default=None, type=str)
-
-    response.status = 200
 
     reading = {
         "device_id" : device_id,
         "value" : value,
         "timestamp": timestamp
     }
-    response.response = json.dumps(reading)
-    
+
+    response = jsonify(reading)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+
+    response.status_code = 200
     return response
 
