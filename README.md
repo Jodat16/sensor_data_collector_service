@@ -2,7 +2,7 @@
 
 service implemented in Flask that accepts sensor readings and publishes them to an MQTT broker.
 
-## Running locally
+## Running service locally
 * to start the service
   * place .env file at root 
   * change into the root directory
@@ -11,3 +11,9 @@ service implemented in Flask that accepts sensor readings and publishes them to 
   * adapt `.env` according to your needs
   * start the service `python run.py`
 * use e.g. `curl` to test the service: `curl -X POST localhost:5000/api/sensors/0001/readings -d "value=109&timestamp=1752243577"`
+
+## Running tests
+* change into the root directory
+* activate python virtual environment with all dependencies
+* `pip install -r requirements-dev.txt`
+* run `python -m pytest`
