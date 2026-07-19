@@ -21,6 +21,19 @@ service implemented in Flask that accepts sensor readings and publishes them to 
 
 * use e.g. `curl` to test the service: `curl -X POST localhost:5000/api/sensors/0001/readings -d "value=109&timestamp=1752243577"`
 
+## Running service and MQTT broker using Docker
+Runs both as containers, with the service reaching the broker by its compose service name.
+
+* copy `.env.example` to `.env` and adjust if needed
+* build and start both `docker compose up -d --build`
+* check both are up `docker compose ps`
+* watch the logs `docker compose logs -f api`
+* subscribe to the topic to watch incoming readings (leave running in its own terminal)
+  * `docker exec -it mosquitto mosquitto_sub -t "service/secom/data01" -v`
+* post a reading as above -- the service is published on the same `localhost:5000`
+* stop with `docker compose down`, or `docker compose down -v` to drop the broker's stored data
+
+
 ### Responses
 | Situation | Status |
 | --- | --- |
