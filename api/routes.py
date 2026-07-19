@@ -1,7 +1,11 @@
-from flask import jsonify, Blueprint, request
+import logging
+
+from flask import jsonify, Blueprint, current_app, request
 
 from . import validation
-from .errors import ValidationError
+from .errors import PublishError, ValidationError
+
+logger = logging.getLogger(__name__)
 
 bp = Blueprint('api', __name__)
 
@@ -25,10 +29,26 @@ def publish_reading(device_id):
             now=validation.utc_now(),
         )
     except ValidationError as error:
+        logger.info(
+            'reading rejected device_id=%s reasons=%s',
+            device_id,
+            '; '.join(f"{e['field']} {e['reason']}" for e in error.errors))
         response = jsonify(errors=error.errors)
         response.status_code = 400
         return response
 
+    try:
+        current_app.publisher.publish(reading)
+    except PublishError as error:
+        # broker unavailable
+        response = jsonify(error=str(error))
+        response.status_code = 503
+        response.headers['Retry-After'] = '5'
+        return response
+
+    #  the reading has been accepted and forwarded to the broker
+    logger.debug('reading published device_id=%s', reading['device_id'])
+
     response = jsonify(reading)
-    response.status_code = 200
+    response.status_code = 202
     return response
