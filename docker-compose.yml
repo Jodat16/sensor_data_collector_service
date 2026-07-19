@@ -1,0 +1,30 @@
+# The service and the broker to publish to.
+
+services:
+  broker:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto-data:/mosquitto/data
+
+  api:
+    build: .  # build an image from ./Dockerfile
+    image: sensor-collector:01
+    container_name: sensor-collector
+    ports:
+      - "5000:5000"
+
+    env_file:
+      - .env
+    environment:
+      MQTT_HOST: broker
+      LOG_LEVEL: DEBUG
+    depends_on:
+      - broker
+
+# specifying volume for broker
+volumes:
+  mosquitto-data:
