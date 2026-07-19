@@ -3,7 +3,7 @@ import logging
 from flask import jsonify, Blueprint, current_app, request
 
 from . import validation
-from .errors import PublishError, ValidationError
+from .errors import ErrorCode, PublishError, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def publish_reading(device_id):
         logger.info(
             'reading rejected device_id=%s reasons=%s',
             device_id,
-            '; '.join(f"{e['field']} {e['reason']}" for e in error.errors))
+            '; '.join(f"[{e['code']}] {e['field']} {e['reason']}" for e in error.errors))
         response = jsonify(errors=error.errors)
         response.status_code = 400
         return response
@@ -41,7 +41,7 @@ def publish_reading(device_id):
         current_app.publisher.publish(reading)
     except PublishError as error:
         # broker unavailable
-        response = jsonify(error=str(error))
+        response = jsonify(error={'code': ErrorCode.BROKER_UNAVAILABLE, 'reason': str(error)})
         response.status_code = 503
         response.headers['Retry-After'] = '5'
         return response

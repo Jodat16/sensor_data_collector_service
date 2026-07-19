@@ -2,7 +2,7 @@
 
 import pytest
 
-from api.errors import ValidationError
+from api.errors import ErrorCode, ValidationError
 from api.validation import (
     TIMESTAMP_TOLERANCE_SECONDS,
     validate_reading,
@@ -89,6 +89,24 @@ class TestReading:
         assert reading == {'device_id': '0001', 'value': 109.0, 'timestamp': NOW}
         assert isinstance(reading['value'], float)
         assert isinstance(reading['timestamp'], int)
+
+    @pytest.mark.parametrize(
+        'value,timestamp,expected',
+        [
+            (None, str(NOW), ErrorCode.VALUE_MISSING),
+            ('abc', str(NOW), ErrorCode.VALUE_NOT_A_NUMBER),
+            ('999', str(NOW), ErrorCode.VALUE_OUT_OF_RANGE),
+            ('20.004', str(NOW), ErrorCode.VALUE_TOO_PRECISE),
+            ('20.0', None, ErrorCode.TIMESTAMP_MISSING),
+            ('20.0', 'abc', ErrorCode.TIMESTAMP_NOT_INTEGER),
+            ('20.0', str(NOW + 601), ErrorCode.TIMESTAMP_OUT_OF_WINDOW),
+        ],
+    )
+    def test_each_failure_carries_its_own_code(self, value, timestamp, expected):
+        with pytest.raises(ValidationError) as raised:
+            validate_reading(device_id='0001', value=value, timestamp=timestamp, now=NOW)
+
+        assert [error['code'] for error in raised.value.errors] == [expected]
 
     def test_reports_every_error_at_once(self):
         """errors related to all fields must be retunred at once"""
